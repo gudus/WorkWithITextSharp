@@ -2,6 +2,7 @@ private byte[] resolutionConvert(byte[] sourceFileName)
         {
             using (MemoryStream msTemp = new MemoryStream())
             {
+                savereq("sourceFileName = " + sourceFileName.Length.ToString());
                 using (var reader = new PdfReader(sourceFileName))
                 {
                     var document = new Document(reader.GetPageSizeWithRotation(1));
@@ -9,19 +10,26 @@ private byte[] resolutionConvert(byte[] sourceFileName)
                     writer.SetFullCompression();
                     writer.SetEncryption(null, System.Text.Encoding.UTF8.GetBytes("myGoodTestPasswordsHelloFromMe!"), PdfWriter.ALLOW_PRINTING, true);
                     document.Open();
-
+                    savereq("pages = " + reader.NumberOfPages);
                     for (var i = 2; i <= reader.NumberOfPages; i += 2)
                     {
                         document.NewPage();
                         var importedPage = writer.GetImportedPage(reader, i);
-                        using (Stream imageStream = new FileStream("WhiteBox.png", FileMode.Open))
+                        using (Stream imageStream = new FileStream(HttpContext.Current.Server.MapPath(".") + "/bin/pics/WhiteBox.png", FileMode.Open, FileAccess.Read))
                         {
-                            iTextSharp.text.Image image = iTextSharp.text.Image.GetInstance(imageStream);
-                            image.ScaleToFit(270, 200);
-                            image.SetAbsolutePosition(300, 610);
-                            var contentByte = writer.DirectContent;
-                            contentByte.AddTemplate(importedPage, 0, 0);
-                            contentByte.AddImage(image, true);
+                            try
+                            {
+                                iTextSharp.text.Image image = iTextSharp.text.Image.GetInstance(imageStream);
+                                image.ScaleToFit(270, 200);
+                                image.SetAbsolutePosition(300, 610);
+                                var contentByte = writer.DirectContent;
+                                contentByte.AddTemplate(importedPage, 0, 0);
+                                contentByte.AddImage(image, true);
+                            }
+                            catch (Exception ex)
+                            {
+                                savereq("ex = " + ex.ToString());
+                            }
                         }
                     }
                     document.Close();
