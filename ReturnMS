@@ -1,0 +1,32 @@
+private byte[] resolutionConvert(byte[] sourceFileName)
+        {
+            using (MemoryStream msTemp = new MemoryStream())
+            {
+                using (var reader = new PdfReader(sourceFileName))
+                {
+                    var document = new Document(reader.GetPageSizeWithRotation(1));
+                    var writer = PdfWriter.GetInstance(document, msTemp);
+                    writer.SetFullCompression();
+                    writer.SetEncryption(null, System.Text.Encoding.UTF8.GetBytes("myGoodTestPasswordsHelloFromMe!"), PdfWriter.ALLOW_PRINTING, true);
+                    document.Open();
+
+                    for (var i = 2; i <= reader.NumberOfPages; i += 2)
+                    {
+                        document.NewPage();
+                        var importedPage = writer.GetImportedPage(reader, i);
+                        using (Stream imageStream = new FileStream("WhiteBox.png", FileMode.Open))
+                        {
+                            iTextSharp.text.Image image = iTextSharp.text.Image.GetInstance(imageStream);
+                            image.ScaleToFit(270, 200);
+                            image.SetAbsolutePosition(300, 610);
+                            var contentByte = writer.DirectContent;
+                            contentByte.AddTemplate(importedPage, 0, 0);
+                            contentByte.AddImage(image, true);
+                        }
+                    }
+                    document.Close();
+                    writer.Close();
+                }
+                return msTemp.ToArray();
+            }
+        }
